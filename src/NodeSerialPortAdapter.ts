@@ -78,19 +78,27 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
     info_: UpstreamPortInfo;
     readable_: ReadableStream<Uint8Array> | undefined;
     writable_: WritableStream<Uint8Array> | undefined;
-    readBuffer_: Buffer = Buffer.from([]);
+    readBuffer_: Uint8Array = new Uint8Array();
     controllerQueue_: ReadableStreamDefaultController[] = [];
 
     get readable(): ReadableStream<Uint8Array> {
-        if (!this.readable_ && this.port_?.isOpen) {
-            this.readable_ = new ReadableStream<Uint8Array>(new NodeUnderlyingSource(this.port_, this));
+        if (!this.readable_) {
+            if (this.port_?.isOpen) {
+                this.readable_ = new ReadableStream<Uint8Array>(new NodeUnderlyingSource(this.port_, this));
+            } else {
+                throw new Error("Port not open");
+            }
         }
         return this.readable_;
     }
 
     get writable(): WritableStream<Uint8Array> {
-        if (!this.writable_ && this.port_?.isOpen) {
-            this.writable_ = new WritableStream<Uint8Array>(new NodeUnderlyingSink(this.port_));
+        if (!this.writable_) {
+            if (this.port_?.isOpen) {
+                this.writable_ = new WritableStream<Uint8Array>(new NodeUnderlyingSink(this.port_));
+            } else {
+                throw new Error("Port not open");
+            }
         }
         return this.writable_;
     }
@@ -156,7 +164,7 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
             usbVendorId: Number("0x" + (this.info_.vendorId || "0")),
             usbProductId: Number("0x" + (this.info_.productId || "0")),
             path: this.info_.path || undefined
-        }
+        } as unknown as SerialPortInfo;
     }
 
     protected closePortEvent() {
@@ -171,9 +179,9 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
             const data: Buffer = Buffer.concat([this.readBuffer_, stream]);
             const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
             controller.enqueue(new Uint8Array(ab));
-            this.readBuffer_ = Buffer.from([]);
+            this.readBuffer_ = Buffer.from([]) as unknown as Uint8Array;
         } else {
-            this.readBuffer_ = Buffer.concat([this.readBuffer_, stream]);
+            this.readBuffer_ = Buffer.concat([this.readBuffer_, stream]) as unknown as Uint8Array;
         }
     }
 }
