@@ -6,14 +6,6 @@ function getRandomInt(max: number) {
     return Math.floor(Math.random() * max);
 }
 
-function getRandomUInt8Array(size: number) {
-    let rtn: number[] = [];
-    for (let i = 0; i < size; i++) {
-        rtn.push(getRandomInt(256));
-    }
-    return new Uint8Array(rtn);
-}
-
 describe('Node Serial Port', () => {
 
     const testPortInfo = { path: "a", manufacturer: "b", serialNumber: "c", pnpId: "d", locationId: "e", productId: "321", vendorId: "123" };
@@ -29,14 +21,14 @@ describe('Node Serial Port', () => {
     });
 
     test('Readable and writable are undefined in new Serial Port', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         expect(subject.readable).toBeUndefined();
         expect(subject.writable).toBeUndefined();
     });
 
     test('Readable and writable are defined in opened Serial Port', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
@@ -45,23 +37,23 @@ describe('Node Serial Port', () => {
     });
 
     test('Read from the Serial Port', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let upstream: SerialPortMock = subject.port_ as SerialPortMock;
+        const upstream: SerialPortMock = subject.port_ as SerialPortMock;
 
         upstream.port?.emitData(Buffer.from(new Uint8Array([1, 2, 3, 4, 5])));
 
         await new Promise(resolve => setTimeout(resolve, 1));
 
-        let reader = subject.readable.getReader();
+        const reader = subject.readable.getReader();
         expect(() => subject.readable.getReader()).toThrow(TypeError); // no second reader, locked
 
         upstream.port?.emitData(Buffer.from(new Uint8Array([6, 7, 8, 9])));
 
-        let expected = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        let { value: received, done } = await reader.read();
+        const expected = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        const { value: received, done } = await reader.read();
         expect(received).toEqual(expected);
         expect(done).toBeFalsy();
 
@@ -71,7 +63,7 @@ describe('Node Serial Port', () => {
     });
 
     test('Reader can be closed without error', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         // first try
 
@@ -95,28 +87,28 @@ describe('Node Serial Port', () => {
             await reader.cancel();
         }, 300);
         while (true) {
-            let { done } = await reader.read();
+            const { done } = await reader.read();
             if (done) break;
         }
     });
 
     test('Reader throws error when the Serial Port is lost', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let upstream: SerialPortMock = subject.port_ as SerialPortMock;
+        const upstream: SerialPortMock = subject.port_ as SerialPortMock;
 
-        let reader = subject.readable.getReader();
+        const reader = subject.readable.getReader();
 
-        let expected = new Uint8Array([1, 2, 3, 4, 5]);
+        const expected = new Uint8Array([1, 2, 3, 4, 5]);
 
         upstream.port?.emitData(Buffer.from(expected));
         await new Promise((r) => setTimeout(r, 1));
 
         subject.port_?.close();
 
-        let { value: received, done } = await reader.read(); // returns last data
+        const { value: received, done } = await reader.read(); // returns last data
 
         expect(done).toBeFalsy();
         expect(received).toEqual(expected);
@@ -124,17 +116,17 @@ describe('Node Serial Port', () => {
     });
 
     test('Reader throws error when it is reading data and the Serial Port is lost', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let upstream: SerialPortMock = subject.port_ as SerialPortMock;
+        const upstream: SerialPortMock = subject.port_ as SerialPortMock;
 
-        let reader = subject.readable.getReader();
+        const reader = subject.readable.getReader();
 
-        let expected = new Uint8Array([1, 2, 3, 4, 5]);
+        const expected = new Uint8Array([1, 2, 3, 4, 5]);
 
-        let reading = reader.read();
+        const reading = reader.read();
 
         upstream.port?.emitData(Buffer.from(expected));
         subject.port_?.close();
@@ -144,13 +136,11 @@ describe('Node Serial Port', () => {
     });
 
     test('Reader throws error when trying to cancel the reader but the Serial Port is lost', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let upstream: SerialPortMock = subject.port_ as SerialPortMock;
-
-        let reader = subject.readable.getReader();
+        const reader = subject.readable.getReader();
 
         subject.port_?.close();
 
@@ -158,32 +148,32 @@ describe('Node Serial Port', () => {
     });
 
     test('Write to the Serial Port', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let upstream: SerialPortMock = subject.port_ as SerialPortMock;
+        const upstream: SerialPortMock = subject.port_ as SerialPortMock;
 
-        let writer = subject.writable.getWriter();
+        const writer = subject.writable.getWriter();
         expect(() => subject.writable.getWriter()).toThrow(TypeError); // no second writer, locked
 
-        let data = new Uint8Array([1, 2, 3, 4, 5]);
+        const data = new Uint8Array([1, 2, 3, 4, 5]);
         await writer.write(data);
 
-        let expected = Buffer.from(data);
-        let received = upstream.port?.recording;
+        const expected = Buffer.from(data);
+        const received = upstream.port?.recording;
         expect(received).toEqual(expected);
     });
 
     test('Writer ignore write data after the Serial Port is closed', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
-        let writer = subject.writable.getWriter();
+        const writer = subject.writable.getWriter();
 
-        let data = new Uint8Array([1, 2, 3, 4, 5]);
-        let cb = writer.write(data);
+        const data = new Uint8Array([1, 2, 3, 4, 5]);
+        const cb = writer.write(data);
 
         await subject.close();
         await cb;
@@ -191,7 +181,7 @@ describe('Node Serial Port', () => {
     });
 
     test('open() opens serial port with correct path and options', async () => {
-        let subject1 = new NodeSerialPortAdapter(testPortInfo);
+        const subject1 = new NodeSerialPortAdapter(testPortInfo);
 
         await subject1.open({ ...testSerialOption, bufferSize: undefined });
 
@@ -207,13 +197,13 @@ describe('Node Serial Port', () => {
             highWaterMark: 65536 // uncommon info
         })
 
-        for (let key in expected1) {
-            expect((subject1.port_?.settings as any)[key]).toEqual((expected1 as any)[key]);
+        for (const key in expected1) {
+            expect((subject1.port_?.settings as Record<string, unknown>)[key]).toEqual((expected1 as Record<string, unknown>)[key]);
         }
     });
 
     test('open() cannot be used if the port is opened', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
 
@@ -221,13 +211,13 @@ describe('Node Serial Port', () => {
     });
 
     test('open() returns an error when trying to open an invalid port', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await expect(async () => await subject.open({ baudRate: 115200 })).rejects.toBeTruthy();
     });
 
     test('close() cannot be used if the port is closed', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         await subject.open(testSerialOption);
         await subject.close();
@@ -238,7 +228,7 @@ describe('Node Serial Port', () => {
     test('getInfo() returns correct information', async () => {
         const testPortInfo = { path: "a", manufacturer: "b", serialNumber: "c", pnpId: "d", locationId: "e", productId: undefined, vendorId: undefined };
 
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
         expect(subject.getInfo()).toEqual({
             serialNumber: "c",
@@ -254,12 +244,12 @@ describe('Node Serial Port', () => {
     });
 
     test('open() and close() events dispatch', async () => {
-        let subject = new NodeSerialPortAdapter(testPortInfo);
+        const subject = new NodeSerialPortAdapter(testPortInfo);
 
-        let conn = jest.fn();
-        let conn2 = jest.fn();
-        let disconn = jest.fn();
-        let disconn2 = jest.fn();
+        const conn = jest.fn();
+        const conn2 = jest.fn();
+        const disconn = jest.fn();
+        const disconn2 = jest.fn();
 
         subject.addEventListener('open', conn);
         subject.addEventListener('close', disconn);
@@ -267,7 +257,7 @@ describe('Node Serial Port', () => {
         subject.onconnect = conn2;
         subject.ondisconnect = disconn2;
 
-        let count = getRandomInt(10) + 5;
+        const count = getRandomInt(10) + 5;
 
         for (let index = 0; index < count; index++) {
             expect(conn).toHaveBeenCalledTimes(index);

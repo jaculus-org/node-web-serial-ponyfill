@@ -45,7 +45,7 @@ describe('Node Serial', () => {
     test('listPorts() returns filtered port with 1 filter', async () => {
         SerialPort.list = jest.fn(async (): Promise<PortInfo[]> => testPortInfo);
 
-        let result = await serial.listPorts({ filters: [{ usbVendorId: 291 }] });
+        const result = await serial.listPorts({ filters: [{ usbVendorId: 291 }] });
 
         expect(result.length).toEqual(1);
         expect(result[0]).toEqual(testSerialPort[0]);
@@ -54,7 +54,7 @@ describe('Node Serial', () => {
     test('listPorts() returns filtered ports with 2 filters', async () => {
         SerialPort.list = jest.fn(async (): Promise<PortInfo[]> => testPortInfo);
 
-        let result = await serial.listPorts({ filters: [{ usbVendorId: 291 }, { usbVendorId: 1110, usbProductId: 1620 }] });
+        const result = await serial.listPorts({ filters: [{ usbVendorId: 291 }, { usbVendorId: 1110, usbProductId: 1620 }] });
 
         expect(result.length).toEqual(2);
         expect(result[0]).toEqual(testSerialPort[0]);
