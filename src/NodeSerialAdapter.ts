@@ -22,8 +22,9 @@ export class NodeSerialAdapter extends EventTarget implements NodeSerial {
         return ports.filter(port => {
             return options?.filters
                 ? options.filters.some(filter =>
-                    filter.usbVendorId === port.getInfo().usbVendorId &&
-                    (!filter.usbProductId || filter.usbProductId === port.getInfo().usbProductId)
+                    (!('usbVendorId' in filter) || filter.usbVendorId === port.getInfo().usbVendorId) &&
+                    (!('usbProductId' in filter) || filter.usbProductId === port.getInfo().usbProductId) &&
+                    (!('path' in filter) || filter.path === port.info_.path)
                 )
                 : true;
         });

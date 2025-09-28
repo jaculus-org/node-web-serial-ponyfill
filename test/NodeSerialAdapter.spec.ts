@@ -61,6 +61,15 @@ describe('Node Serial', () => {
         expect(result[1]).toEqual(testSerialPort[1]);
     });
 
+    test('listPorts() returns filtered port with path filter', async () => {
+        SerialPort.list = jest.fn(async (): Promise<PortInfo[]> => testPortInfo);
+
+        const result = await serial.listPorts({ filters: [{ path: "a" } as any] });
+
+        expect(result.length).toEqual(1);
+        expect(result[0]).toEqual(testSerialPort[0]);
+    });
+
     test('findPort() returns nothing', async () => {
         SerialPort.list = jest.fn(async (): Promise<PortInfo[]> => []);
 

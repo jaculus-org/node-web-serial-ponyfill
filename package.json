@@ -1,5 +1,5 @@
 {
-  "name": "node-web-serial-ponyfill",
+  "name": "@jaculus/node-web-serial-ponyfill",
   "version": "0.5.3",
   "description": "An implementation of the Serial API on top of the Node.js serialport package.",
   "main": "dist/node-web-serial-ponyfill.cjs.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jerrylum/node-web-serial-ponyfill.git"
+    "url": "git+https://github.com/jaculus-org/node-web-serial-ponyfill.git"
   },
   "files": [
     "dist/*",
@@ -31,9 +31,9 @@
   "author": "jerrylum <me@jerryio.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jerrylum/node-web-serial-ponyfill/issues"
+    "url": "https://github.com/jaculus-org/node-web-serial-ponyfill/issues"
   },
-  "homepage": "https://github.com/jerrylum/node-web-serial-ponyfill#readme",
+  "homepage": "https://github.com/jaculus-org/node-web-serial-ponyfill#readme",
   "devDependencies": {
     "@babel/core": "^7.18.2",
     "@babel/preset-env": "^7.18.2",
