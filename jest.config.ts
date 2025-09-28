@@ -8,11 +8,6 @@ export default {
 
   testEnvironment: 'node',
 
-  transform: {
-    '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.ts?$': 'ts-jest',
-  },
-
   // Indicates whether the coverage information should be collected while executing the test
   collectCoverage: true,
 
