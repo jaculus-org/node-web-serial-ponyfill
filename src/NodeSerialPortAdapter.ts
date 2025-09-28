@@ -154,7 +154,8 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
             productId: this.info_.productId,
             product: undefined,
             usbVendorId: Number("0x" + (this.info_.vendorId || "0")),
-            usbProductId: Number("0x" + (this.info_.productId || "0"))
+            usbProductId: Number("0x" + (this.info_.productId || "0")),
+            path: this.info_.path || undefined
         }
     }
 
@@ -165,7 +166,7 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
 
     protected receiveDataEvent(stream: Buffer) {
         let controller = this.controllerQueue_.shift();
-        
+
         if (controller) {
             let data: Buffer = Buffer.concat([this.readBuffer_, stream]);
             let ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
