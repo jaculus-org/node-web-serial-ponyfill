@@ -171,6 +171,10 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
         });
     }
 
+    forget(): Promise<void> {
+        return Promise.resolve();
+    }
+
     getInfo(): Partial<SerialPortInfo> {
         return {
             serialNumber: this.info_.serialNumber,
