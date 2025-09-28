@@ -23,8 +23,8 @@ describe('Node Serial Port', () => {
     test('Readable and writable are undefined in new Serial Port', async () => {
         const subject = new NodeSerialPortAdapter(testPortInfo);
 
-        expect(subject.readable).toBeUndefined();
-        expect(subject.writable).toBeUndefined();
+        expect(() => subject.readable).toThrowError("Port not open");
+        expect(() => subject.writable).toThrowError("Port not open");
     });
 
     test('Readable and writable are defined in opened Serial Port', async () => {
@@ -198,7 +198,7 @@ describe('Node Serial Port', () => {
         })
 
         for (const key in expected1) {
-            expect((subject1.port_?.settings as Record<string, unknown>)[key]).toEqual((expected1 as Record<string, unknown>)[key]);
+            expect((subject1.port_?.settings as unknown as Record<string, unknown>)[key]).toEqual((expected1 as Record<string, unknown>)[key]);
         }
     });
 

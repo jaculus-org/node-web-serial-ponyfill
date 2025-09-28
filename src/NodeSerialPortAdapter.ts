@@ -1,7 +1,18 @@
 import { SerialPort as UpstreamSerialPort, SerialPortMock as UpstreamSerialPortMock } from "serialport"; // Adaptee
 import { PortInfo as UpstreamPortInfo } from "@serialport/bindings-cpp";
-import { ReadableStream, WritableStream } from "web-streams-polyfill/ponyfill";
+import { ReadableStream, WritableStream } from "web-streams-polyfill";
 import { NodeSerialPort } from ".";
+
+function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
+    const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return result;
+}
 
 type AbstractUpstreamSerialPort = UpstreamSerialPort | UpstreamSerialPortMock;
 
@@ -19,7 +30,7 @@ class NodeUnderlyingSource implements UnderlyingSource<Uint8Array> {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async start(_controller: ReadableStreamDefaultController) {
-        await this.port_.read(0);
+        // await this.port_.read(0);
     }
 
     pull(controller: ReadableStreamDefaultController) {
@@ -35,7 +46,7 @@ class NodeUnderlyingSource implements UnderlyingSource<Uint8Array> {
         this.port_.once("close", onClose);
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.port_.once("data", async (_data: Buffer) => {
+        this.port_.once("data", async (_data: Uint8Array) => {
             this.port_.removeListener("close", onClose);
         });
     }
@@ -55,13 +66,21 @@ class NodeUnderlyingSink implements UnderlyingSink<Uint8Array> {
                 return;
             }
 
-            this.port_.write(chunk, (err: Error | null) => {
-                if (err) reject(err);
-            });
-            this.port_.drain((err: Error | null) => {
-                if (err) reject(err);
-                else resolve();
-            });
+            try {
+                this.port_.write(chunk, (err: Error | null) => {
+                    if (err) reject(err);
+                });
+                this.port_.drain((err: Error | null) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            } catch (e) {
+                if (!this.port_.isOpen) {
+                    resolve();
+                } else {
+                    reject(e);
+                }
+            }
         });
     }
 }
@@ -162,8 +181,7 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
             productId: this.info_.productId,
             product: undefined,
             usbVendorId: Number("0x" + (this.info_.vendorId || "0")),
-            usbProductId: Number("0x" + (this.info_.productId || "0")),
-            path: this.info_.path || undefined
+            usbProductId: Number("0x" + (this.info_.productId || "0"))
         } as unknown as SerialPortInfo;
     }
 
@@ -172,16 +190,16 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
         // if (this.ondisconnect) this.ondisconnect(new Event("disconnect"));
     }
 
-    protected receiveDataEvent(stream: Buffer) {
+    protected receiveDataEvent(stream: Uint8Array) {
         const controller = this.controllerQueue_.shift();
 
         if (controller) {
-            const data: Buffer = Buffer.concat([this.readBuffer_, stream]);
+            const data = concatUint8Arrays([this.readBuffer_, stream]);
             const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
             controller.enqueue(new Uint8Array(ab));
-            this.readBuffer_ = Buffer.from([]) as unknown as Uint8Array;
+            this.readBuffer_ = new Uint8Array();
         } else {
-            this.readBuffer_ = Buffer.concat([this.readBuffer_, stream]) as unknown as Uint8Array;
+            this.readBuffer_ = concatUint8Arrays([this.readBuffer_, stream]);
         }
     }
 }
