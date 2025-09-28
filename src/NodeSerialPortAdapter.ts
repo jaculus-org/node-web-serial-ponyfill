@@ -12,11 +12,12 @@ class NodeUnderlyingSource implements UnderlyingSource<Uint8Array> {
     handleDisconnection(controller: ReadableStreamDefaultController) {
         if (this.adapter_.readable_)
             controller.error(new Error("The device has been lost."));
-        else if (!(controller as any)._closeRequested && (controller as any)._controlledReadableStream._state === 'readable')
+        else if (!(controller as unknown as { _closeRequested?: boolean })._closeRequested && (controller as unknown as { _controlledReadableStream?: { _state: string } })._controlledReadableStream?._state === 'readable')
             // HACK: avoid "The stream is not in a state that permits close" error
             controller.close();
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async start(_controller: ReadableStreamDefaultController) {
         await this.port_.read(0);
     }
@@ -33,7 +34,8 @@ class NodeUnderlyingSource implements UnderlyingSource<Uint8Array> {
 
         this.port_.once("close", onClose);
 
-        this.port_.once("data", async (_stream: Buffer) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this.port_.once("data", async (_data: Buffer) => {
             this.port_.removeListener("close", onClose);
         });
     }
@@ -74,8 +76,8 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
 
     port_?: AbstractUpstreamSerialPort;
     info_: UpstreamPortInfo;
-    readable_: ReadableStream<Uint8Array>;
-    writable_: WritableStream<Uint8Array>;
+    readable_: ReadableStream<Uint8Array> | undefined;
+    writable_: WritableStream<Uint8Array> | undefined;
     readBuffer_: Buffer = Buffer.from([]);
     controllerQueue_: ReadableStreamDefaultController[] = [];
 
@@ -132,10 +134,8 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
         return new Promise((resolve) => {
             if (!this.port_) throw new Error("Failed to execute 'close' on 'SerialPort': The port is already closed.");
 
-            // XXX: Not implemented the following error
-            // TypeError: Failed to execute 'close' on 'SerialPort': Cannot cancel a locked stream
-            this.readable_ = undefined as any;
-            this.writable_ = undefined as any;
+            this.readable_ = undefined;
+            this.writable_ = undefined;
 
             this.port_.close(() => {
                 this.port_ = undefined;
@@ -165,11 +165,11 @@ export class NodeSerialPortAdapter extends EventTarget implements NodeSerialPort
     }
 
     protected receiveDataEvent(stream: Buffer) {
-        let controller = this.controllerQueue_.shift();
+        const controller = this.controllerQueue_.shift();
 
         if (controller) {
-            let data: Buffer = Buffer.concat([this.readBuffer_, stream]);
-            let ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+            const data: Buffer = Buffer.concat([this.readBuffer_, stream]);
+            const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
             controller.enqueue(new Uint8Array(ab));
             this.readBuffer_ = Buffer.from([]);
         } else {

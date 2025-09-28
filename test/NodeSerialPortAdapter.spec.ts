@@ -54,7 +54,7 @@ describe('Node Serial Port', () => {
         upstream.port?.emitData(Buffer.from(new Uint8Array([1, 2, 3, 4, 5])));
 
         await new Promise(resolve => setTimeout(resolve, 1));
-        
+
         let reader = subject.readable.getReader();
         expect(() => subject.readable.getReader()).toThrow(TypeError); // no second reader, locked
 

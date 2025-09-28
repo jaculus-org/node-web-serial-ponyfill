@@ -1,4 +1,5 @@
 import { SerialPort as UpstreamSerialPort } from "serialport";
+import { PortInfo as UpstreamPortInfo } from "@serialport/bindings-cpp";
 
 import { NodeSerial } from ".";
 import { NodeSerialPortAdapter } from "./NodeSerialPortAdapter";
@@ -8,13 +9,13 @@ export class NodeSerialAdapter extends EventTarget implements NodeSerial {
     onconnect: EventHandler;
     ondisconnect: EventHandler;
 
-    protected selectedPorts: String[] = [];
+    protected selectedPorts: string[] = [];
 
     async listPorts(options?: SerialPortRequestOptions): Promise<NodeSerialPortAdapter[]> {
-        let ports: NodeSerialPortAdapter[] = [];
-        let portsInfo = await UpstreamSerialPort.list();
+        const ports: NodeSerialPortAdapter[] = [];
+        const portsInfo = await UpstreamSerialPort.list();
 
-        for (let info of portsInfo) {
+        for (const info of portsInfo) {
             ports.push(new NodeSerialPortAdapter(info));
         }
 
@@ -29,14 +30,14 @@ export class NodeSerialAdapter extends EventTarget implements NodeSerial {
     }
 
     async findPort(portPath: string): Promise<SerialPort | undefined> {
-        let ports = await this.listPorts();
+        const ports = await this.listPorts();
         return ports.find(port => port.info_.path === portPath);
     }
 
     /**
      * In a browser: it returns connected ports that the site already has access to.
      * In Node.js: it returns all ports that the user has selected in requestPort();
-     * 
+     *
      * @returns the list of ports that the user has selected in requestPort();
      */
     async getPorts(): Promise<SerialPort[]> {
@@ -44,14 +45,14 @@ export class NodeSerialAdapter extends EventTarget implements NodeSerial {
     }
 
     async requestPort(options?: SerialPortRequestOptions): Promise<SerialPort> {
-        let ports = await this.listPorts(options);
+        const ports = await this.listPorts(options);
 
         console.log("\nPlease select a port.\n------------------------------");
 
         for (let i = 0; i < ports.length; i++) {
-            let port = ports[i];
-            let info = port.info_;
-            let friendlyName: string | undefined = (info as any).friendlyName;
+            const port = ports[i];
+            const info = port.info_;
+            const friendlyName: string | undefined = (info as UpstreamPortInfo & { friendlyName?: string }).friendlyName;
 
             if (friendlyName !== undefined)
                 console.log(`${i}: ${friendlyName}`);
@@ -65,18 +66,19 @@ export class NodeSerialAdapter extends EventTarget implements NodeSerial {
 
         console.log("------------------------------");
 
+        let ans: string;
         if (ports.length === 0) {
-            var ans = await prompt('Enter "r" to reload the list: ');
+            ans = await prompt('Enter "r" to reload the list: ');
         } else if (ports.length === 1) {
-            var ans = await prompt(`Enter 0 to the port or "r" to reload the list: `);
+            ans = await prompt(`Enter 0 to the port or "r" to reload the list: `);
         } else {
-            var ans = await prompt(`Enter 0 ~ ${ports.length - 1} to select a port or "r" to reload the list: `);
+            ans = await prompt(`Enter 0 ~ ${ports.length - 1} to select a port or "r" to reload the list: `);
         }
 
         if (ans === 'r') {
             return this.requestPort(options);
         } else if (ans !== "" && ports[Number(ans)]) {
-            let port = ports[Number(ans)];
+            const port = ports[Number(ans)];
             if (port.info_.pnpId !== undefined)
                 this.selectedPorts.push(port.info_.pnpId);
             return port;
